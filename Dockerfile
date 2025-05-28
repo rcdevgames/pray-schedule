@@ -15,6 +15,6 @@ FROM gcr.io/distroless/static-debian12
 
 COPY --from=builder /app/main /app/main
 
-EXPOSE 8080
+EXPOSE 5555
 
 CMD ["/app/main"]
