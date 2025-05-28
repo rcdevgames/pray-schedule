@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +12,12 @@ import (
 type ReverseGeocodeResponse struct {
 	City        string `json:"city"`
 	CountryName string `json:"countryName"`
+}
+
+type PrayerTimesResponse struct {
+	Data struct {
+		Timings map[string]string `json:"timings"`
+	} `json:"data"`
 }
 
 func main() {
@@ -35,9 +41,8 @@ func main() {
 		}
 		defer resp.Body.Close()
 
-		body, _ := ioutil.ReadAll(resp.Body)
 		var geoData ReverseGeocodeResponse
-		if err := json.Unmarshal(body, &geoData); err != nil {
+		if err := json.NewDecoder(resp.Body).Decode(&geoData); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse reverse geocode response"})
 			return
 		}
@@ -51,11 +56,21 @@ func main() {
 		}
 		defer prayerResp.Body.Close()
 
-		prayerBody, _ := ioutil.ReadAll(prayerResp.Body)
+		var prayerData PrayerTimesResponse
+		if err := json.NewDecoder(prayerResp.Body).Decode(&prayerData); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse prayer times response"})
+			return
+		}
 
-		// Return response from Aladhan API
-		c.Data(http.StatusOK, "application/json", prayerBody)
+		// Final response
+		c.JSON(http.StatusOK, gin.H{
+			"city":    geoData.City,
+			"country": geoData.CountryName,
+			"times":   prayerData.Data.Timings,
+		})
 	})
 
-	r.Run(":5555")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
+	}
 }
