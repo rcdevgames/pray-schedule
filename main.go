@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
@@ -48,7 +49,9 @@ func main() {
 		}
 
 		// Step 2: Get Prayer Times
-		prayerURL := fmt.Sprintf("https://api.aladhan.com/v1/timingsByCity?city=%s&country=%s", geoData.City, geoData.CountryName)
+		city := url.QueryEscape(geoData.City)
+		country := url.QueryEscape(geoData.CountryName)
+		prayerURL := fmt.Sprintf("https://api.aladhan.com/v1/timingsByCity?city=%s&country=%s", city, country)
 		prayerResp, err := http.Get(prayerURL)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to call prayer times API"})
